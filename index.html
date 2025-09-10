@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>单词消消乐</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8c0ff, #3f2b96);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: white;
+            text-align: center;
+            margin: 15px 0 25px;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+            letter-spacing: 2px;
+        }
+        
+        .game-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .bubble {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            text-align: center;
+            padding: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 8px 15px rgba(0, 0, 0, 0.1),
+                inset 0 -6px 12px rgba(0, 0, 0, 0.2),
+                inset 0 6px 12px rgba(255, 255, 255, 0.5);
+            user-select: none;
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+            word-break: break-word;
+            overflow: hidden;
+        }
+        
+        .bubble.selected {
+            transform: scale(1.1) translateZ(20px);
+            box-shadow: 
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 8px 15px rgba(0, 0, 0, 0.1),
+                inset 0 -6px 12px rgba(0, 0, 0, 0.2),
+                inset 0 6px 12px rgba(255, 255, 255, 0.5);
+        }
+        
+        .bubble.matched {
+            visibility: hidden;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 14px 25px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .result {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2.2rem;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .result-content {
+            background: linear-gradient(135deg, #3498db, #8e44ad);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            max-width: 90%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .result h2 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .result p {
+            margin-bottom: 30px;
+            font-size: 1.6rem;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            opacity: 0;
+            animation: confetti-fall 5s linear infinite;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .title {
+                font-size: 2.3rem;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .bubble {
+                font-size: 16px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            button {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            
+            .result h2 {
+                font-size: 2rem;
+            }
+            
+            .result p {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">单词消消乐</h1>
+        
+        <div class="game-panel">
+            <div class="stats">
+                <div>时间: <span id="time">0</span>秒</div>
+                <div>匹配: <span id="matches">0</span>/<span id="total">6</span></div>
+            </div>
+            
+            <div class="game-board" id="game-board"></div>
+            
+            <div class="controls">
+                <button id="hint-btn">
+                    <i class="fas fa-lightbulb"></i> 提示
+                </button>
+                <button id="restart-btn">
+                    <i class="fas fa-redo"></i> 重新开始
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="result" id="result">
+        <div class="result-content">
+            <h2>恭喜你挑战成功!</h2>
+            <p>用时: <span id="result-time">0</span>秒</p>
+            <button id="next-level">
+                <i class="fas fa-play"></i> 继续挑战
+            </button>
+        </div>
+    </div>
+    
+    <div class="celebration" id="celebration"></div>
+    
+    <audio id="bubble-sound" preload="auto">
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADwADw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AAABQTEFNRTMuMTAwBKkAAAAAAAAAADUgJAObQgABgAAAB8PAzLgTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/++DEAAAIkAN/tBAAJbCb/7eYAAXQk3+28wAAAPwAAAAAAA8fAAAAABBkGQZJ8mQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkGQZBkG极简版泡泡音效（实际应用中应使用更高质量的音效）" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // 雅思词汇库（英文-中文对应）
+        const wordPairs = [
+            {en: "snack", cn: "零食"},
+            {en: "snow", cn: "下雪❄"},
+            {en: "snail", cn: "蜗牛🐌"},
+            {en: "fox", cn: "狐狸🦊"},
+            {en: "fur", cn: "（动物的）软毛"},
+            {en: "paw", cn: "（动物的）爪"},
+            {en: "crow", cn: "乌鸦"},
+            {en: "feather", cn: "羽毛的"},
+            {en: "beak", cn: "鸟喙"},
+   
+        ];
+
+        let selectedBubbles = [];
+        let matchedPairs = 0;
+        let totalPairs = 6; // 总共需要匹配的对数
+        let startTime;
+        let timerInterval;
+        let currentWords = [];
+
+        // 初始化游戏
+        function initGame() {
+            clearInterval(timerInterval);
+            selectedBubbles = [];
+            matchedPairs = 0;
+            document.getElementById('matches').textContent = '0';
+            document.getElementById('time').textContent = '0';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('celebration').style.display = 'none';
+            
+            // 随机选择单词对
+            currentWords = selectRandomWords();
+            
+            // 创建泡泡
+            createBubbles();
+            
+            // 开始计时
+            startTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // 随机选择单词
+        function selectRandomWords() {
+            const shuffled = [...wordPairs].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, totalPairs);
+        }
+
+        // 创建泡泡
+        function createBubbles() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            
+            // 创建英文和中文泡泡
+            const allWords = [];
+            currentWords.forEach(pair => {
+                allWords.push({text: pair.en, type: 'en', pair: pair.en});
+                allWords.push({text: pair.cn, type: 'cn', pair: pair.en});
+            });
+            
+            // 随机排序
+            const shuffledWords = allWords.sort(() => 0.5 - Math.random());
+            
+            // 创建泡泡元素
+            shuffledWords.forEach(word => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = word.text;
+                bubble.dataset.type = word.type;
+                bubble.dataset.pair = word.pair;
+                
+                // 随机颜色
+                const hue = Math.floor(Math.random() * 360);
+                bubble.style.background = `radial-gradient(circle at 30% 30%, hsl(${hue}, 100%, 80%), hsl(${hue}, 100%, 60%))`;
+                
+                bubble.addEventListener('click', handleBubbleClick);
+                gameBoard.appendChild(bubble);
+            });
+        }
+
+        // 处理泡泡点击
+        function handleBubbleClick(e) {
+            const bubble = e.target;
+            
+            // 如果已经匹配或者是已经选中的泡泡，则忽略
+            if (bubble.classList.contains('matched') || bubble.classList.contains('selected')) {
+                return;
+            }
+            
+            // 播放音效
+            playBubbleSound();
+            
+            // 选中泡泡
+            bubble.classList.add('selected');
+            selectedBubbles.push(bubble);
+            
+            // 如果选中了两个泡泡，检查是否匹配
+            if (selectedBubbles.length === 2) {
+                const [first, second] = selectedBubbles;
+                
+                // 检查是否是一对（一个是英文，一个是中文，且属于同一单词对）
+                if (
+                    first.dataset.type !== second.dataset.type && 
+                    first.dataset.pair === second.dataset.pair
+                ) {
+                    // 匹配成功
+                    setTimeout(() => {
+                        first.classList.add('matched');
+                        second.classList.add('matched');
+                        selectedBubbles = [];
+                        matchedPairs++;
+                        document.getElementById('matches').textContent = matchedPairs;
+                        
+                        // 检查游戏是否完成
+                        if (matchedPairs === totalPairs) {
+                            gameComplete();
+                        }
+                    }, 500);
+                } else {
+                    // 不匹配
+                    setTimeout(() => {
+                        first.classList.remove('selected');
+                        second.classList.remove('selected');
+                        selectedBubbles = [];
+                    }, 1000);
+                }
+            }
+        }
+
+        // 播放泡泡音效
+        function playBubbleSound() {
+            const sound = document.getElementById('bubble-sound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio play failed:", e));
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            const currentTime = new Date();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            document.getElementById('time').textContent = elapsedTime;
+        }
+
+        // 游戏完成
+        function gameComplete() {
+            clearInterval(timerInterval);
+            const endTime = new Date();
+            const totalTime = Math.floor((endTime - startTime) / 1000);
+            
+            document.getElementById('result-time').textContent = totalTime;
+            document.getElementById('result').style.display = 'flex';
+            document.getElementById('celebration').style.display = 'block';
+            createConfetti();
+        }
+
+        // 创建庆祝彩花
+        function createConfetti() {
+            const celebration = document.getElementById('celebration');
+            celebration.innerHTML = '';
+            
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9c74f', '#ffafcc', '#83e377'];
+            
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (10 + Math.random() * 15) + 'px';
+                confetti.style.height = (10 + Math.random() * 15) + 'px';
+                confetti.style.animationDelay = (Math.random() * 5) + 's';
+                confetti.style.animationDuration = (3 + Math.random() * 5) + 's';
+                celebration.appendChild(confetti);
+            }
+        }
+
+        // 提示功能
+        function showHint() {
+            if (selectedBubbles.length > 0) return;
+            
+            // 找到所有未匹配的泡泡
+            const allBubbles = document.querySelectorAll('.bubble:not(.matched)');
+            const unmatched = {};
+            
+            // 分组未匹配的泡泡
+            allBubbles.forEach(bubble => {
+                const pair = bubble.dataset.pair;
+                if (!unmatched[pair]) {
+                    unmatched[pair] = [];
+                }
+                unmatched[pair].push(bubble);
+            });
+            
+            // 找到未匹配的单词对
+            for (const pair in unmatched) {
+                if (unmatched[pair].length === 2) {
+                    // 高亮显示匹配的一对
+                    unmatched[pair][0].classList.add('selected');
+                    unmatched[pair][1].classList.add('selected');
+                    
+                    setTimeout(() => {
+                        unmatched[pair][0].classList.remove('selected');
+                        unmatched[pair][1].classList.remove('selected');
+                    }, 1000);
+                    
+                    break;
+                }
+            }
+        }
+
+        // 事件监听
+        document.getElementById('next-level').addEventListener('click', initGame);
+        document.getElementById('restart-btn').addEventListener('click', initGame);
+        document.getElementById('hint-btn').addEventListener('click', showHint);
+
+        // 初始加载游戏
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
